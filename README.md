@@ -6,7 +6,7 @@ A small script reenabling the "COPR" command on Fedora distros not including it.
 Install:
 
 ```
-wget https://raw.githubusercontent.com/trytomakeyouprivate/COPR-OSTree/main/copr -P ~/local/bin/
+wget https://raw.githubusercontent.com/trytomakeyouprivate/COPR-OSTree/main/copr -P ~/.local/bin/
 ```
 
 Usage: as you would normally use it
