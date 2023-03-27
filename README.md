@@ -11,5 +11,5 @@ wget https://raw.githubusercontent.com/trytomakeyouprivate/COPR-OSTree/main/copr
 
 Usage: as you would normally use it
 - [Find a repo you like](https://copr.fedorainfracloud.org/coprs/)
-- sudo copr enable author/repo
+- `sudo copr enable author/repo`
 - install packages with `dnf` or `rpm-ostree`
