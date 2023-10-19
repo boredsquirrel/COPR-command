@@ -12,7 +12,7 @@ fi
 
 if [[ "$1" == "enable" ]]; then
  echo "$author/$reponame -> $releasever"
- curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | sudo tee /etc/yum.repos.d/$author-$reponame.repo
+ curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec sudo tee /etc/yum.repos.d/$author-$reponame.repo
 elif [[ "$1" == "remove" ]]; then
- sudo rm /etc/yum.repos.d/$author-$reponame.repo
+ pkexec sudo rm /etc/yum.repos.d/$author-$reponame.repo
 fi
