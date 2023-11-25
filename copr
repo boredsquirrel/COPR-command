@@ -3,16 +3,86 @@ pushd /tmp
 
 author="$(echo $2 | cut -d '/' -f1)"
 reponame="$(echo $2 | cut -d '/' -f2)"
+releasever="$(rpm -E %fedora)"
 
-if [ ! $3 ]; then
- releasever="$(rpm -E %fedora)"
-else
- releasever=$3
-fi
+question=$(cat <<EOF
+Enabling a Copr repository. Please note that this repository is not part
+of the main distribution, and quality may vary.
+
+The Fedora Project does not exercise any power over the contents of
+this repository beyond the rules outlined in the Copr FAQ at
+<https://docs.pagure.org/copr.copr/user_documentation.html#what-i-can-build-in-copr>,
+and packages are not held to any quality or security level.
+
+Please do not file bug reports about these packages in Fedora
+Bugzilla. In case of problems, contact the owner of this repository.
+
+Do you really want to enable copr.fedorainfracloud.org/$author/$reponame? [y/N]:
+EOF)
+
+helptext=$(cat << EOF
+
+====== Experimental COPR Command in non-DNF Fedora Distributions ======
+
+This Tool is not made or supported by the Fedora Project,
+but aims to reproduce the "dnf copr" functionalities for easily adding COPRs.
+
+Usage: ./copr [OPTION] [ARGUMENT]
+
+Options:
+  enable    Add COPR repository.
+  remove    Remove COPR repository after backing it up.
+  list      List all COPR repositories in your repo folder.
+  search    Search for a COPR repository by name (in your Browser)
+  help      Display this help text.
+
+Arguments:
+  [ARGUMENT]  Name of the COPR repository to search for (required for 'search' option).
+
+Examples:
+  copr enable kdesig/kde-nightly-qt6
+  copr remove kdesig/kde-nightly-qt6
+  copr list
+  copr search Displaylink
+
+Add this tool to your \$PATH using
+
+cat >> ~/.bashrc <<ABC
+# add ~/.bin to your Path
+PATH="\$PATH:~/.bin"
+ABC
+
+For more information, visit https://discussion.fedoraproject.org/.
+
+EOF
+)
+
+# Main loop
 
 if [[ "$1" == "enable" ]]; then
- echo "$author/$reponame -> $releasever"
- curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec sudo tee /etc/yum.repos.d/$author-$reponame.repo
+ while true; do
+     read -p "$question" yn
+     case $yn in
+         [Yy]* ) echo "$author/$reponame -> $releasever"
+ curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec sudo tee /etc/yum.repos.d/$author-$reponame.repo && break;;
+         * ) echo "Error: Safe and good answer. Exiting." && break;;
+     esac
+ done
+
 elif [[ "$1" == "remove" ]]; then
- pkexec sudo rm /etc/yum.repos.d/$author-$reponame.repo
+ pkexec cp /etc/yum.repos.d/$author-$reponame.repo ~/$author-$reponame-BACKUP.repo &&\
+ pkexec chown $USER ~/$author-$reponame-BACKUP.repo &&\
+ echo "Backup created in your home folder." &&\
+
+ pkexec rm /etc/yum.repos.d/$author-$reponame.repo &&\
+ echo "COPR Repository $author-$reponame removed." || echo "ERROR removing COPR repository."
+
+elif [[ "$1" == "list" ]]; then
+ ls /etc/yum.repos.d/ | grep copr.fedorainfracloud.org
+
+elif [[ "$1" == "search" ]]; then
+ xdg-open "https://copr.fedorainfracloud.org/coprs/fulltext/?fulltext=$2"
+
+elif [[ "$1" == "-h" || "$1" == "--h" || "$1" == "-help" || "$1" == "--help" || "$1" == "help" ]]; then
+ echo "$helptext"
 fi
