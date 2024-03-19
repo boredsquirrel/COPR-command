@@ -30,6 +30,9 @@ but aims to reproduce the "dnf copr" functionalities for easily adding COPRs.
 
 Usage: ./copr [OPTION] [ARGUMENT]
 
+
+Usage: copr [OPTION] [ARGUMENT]
+
 Options:
   enable    Add COPR repository.
   remove    Remove COPR repository after backing it up.
@@ -38,22 +41,15 @@ Options:
   help      Display this help text.
 
 Arguments:
-  [ARGUMENT]  Name of the COPR repository to search for (required for 'search' option).
+  [ARGUMENT]  Name of the COPR repository (for search) or `author/repo` (for install and remove)
 
 Examples:
   copr enable kdesig/kde-nightly-qt6
   copr remove kdesig/kde-nightly-qt6
   copr list
-  copr search Displaylink
+  copr search uutils
 
-Add this tool to your \$PATH using
-
-cat >> ~/.bashrc <<ABC
-# add ~/.bin to your Path
-PATH="\$PATH:~/.bin"
-ABC
-
-For more information, visit https://discussion.fedoraproject.org/.
+For help, visit https://discussion.fedoraproject.org.
 
 EOF
 )
@@ -65,7 +61,7 @@ if [[ "$1" == "enable" ]]; then
      read -p "$question" yn
      case $yn in
          [Yy]* ) echo "$author/$reponame -> $releasever"
- curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec sudo tee /etc/yum.repos.d/$author-$reponame.repo && break;;
+ curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec sudo tee /etc/yum.repos.d/COPR_$author-$reponame.repo && break;;
          * ) echo "Error: Safe and good answer. Exiting." && break;;
      esac
  done
@@ -79,7 +75,7 @@ elif [[ "$1" == "remove" ]]; then
  echo "COPR Repository $author-$reponame removed." || echo "ERROR removing COPR repository."
 
 elif [[ "$1" == "list" ]]; then
- ls /etc/yum.repos.d/ | grep copr.fedorainfracloud.org
+ ls /etc/yum.repos.d/ | grep COPR_
 
 elif [[ "$1" == "search" ]]; then
  xdg-open "https://copr.fedorainfracloud.org/coprs/fulltext/?fulltext=$2"
