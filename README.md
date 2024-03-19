@@ -1,9 +1,28 @@
-# COPR-standalone
-A small script reenabling the "COPR" command on Fedora distros not including it. It allows you to add custom repositories for example on Silverblue/Kinoite.
+# standalone copr command
+This Tool is not made or supported by the Fedora Project,
+but aims to reproduce the `dnf copr` functionalities for easily adding COPRs on Fedora Atomic.
 
-New: It doesnt use sudo anymore but pkexec!
+It does everything rootless (unlike `dnf copr`) and only requires privilege escalation using `pkexec` for writing the repo file. Thus is also works without `sudo`.
 
-![Fedora COPR image](https://copr.fedorainfracloud.org/static/copr_logo.png)
+```
+Usage: copr [OPTION] [ARGUMENT]
+
+Options:
+  enable    Add COPR repository.
+  remove    Remove COPR repository after backing it up.
+  list      List all COPR repositories in your repo folder.
+  search    Search for a COPR repository by name (in your Browser)
+  help      Display this help text.
+
+Arguments:
+  [ARGUMENT]  Name of the COPR repository (for search) or `author/repo` (for install and remove)
+
+Examples:
+  copr enable kdesig/kde-nightly-qt6
+  copr remove kdesig/kde-nightly-qt6
+  copr list
+  copr search uutils
+```
 
 Install:
 
@@ -11,8 +30,3 @@ Install:
 wget https://raw.githubusercontent.com/trytomakeyouprivate/COPR-OSTree/main/copr -P ~/.local/bin/ &&\
 chmod +x ~/.local/bin/copr
 ```
-
-Usage: as you would normally use it
-- [Find a repo you like](https://copr.fedorainfracloud.org/coprs/)
-- `copr enable author/name`
-- install packages with `dnf` or `rpm-ostree`
