@@ -12,6 +12,8 @@ Options:
   remove    Remove COPR repository after backing it up.
   list      List all COPR repositories in your repo folder.
   search    Search for a COPR repository by name (in your Browser)
+  disable   Keep a repo but disable it
+  enable    Make a disabled repo active
   help      Display this help text.
 
 Arguments:
