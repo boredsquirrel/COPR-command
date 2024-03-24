@@ -61,21 +61,21 @@ if [[ "$1" == "enable" ]]; then
      read -p "$question" yn
      case $yn in
          [Yy]* ) echo "$author/$reponame -> $releasever"
- curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec sudo tee /etc/yum.repos.d/COPR_$author-$reponame.repo && break;;
+ curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec sudo tee /etc/yum.repos.d/_copr_$author-$reponame.repo && break;;
          * ) echo "Error: Safe and good answer. Exiting." && break;;
      esac
  done
 
 elif [[ "$1" == "remove" ]]; then
- pkexec cp /etc/yum.repos.d/$author-$reponame.repo ~/$author-$reponame-BACKUP.repo &&\
- pkexec chown $USER ~/$author-$reponame-BACKUP.repo &&\
+ pkexec cp /etc/yum.repos.d/_copr_$author-$reponame.repo ~/_copr_$author-$reponame-BACKUP.repo &&\
+ pkexec chown $USER ~/_copr_$author-$reponame-BACKUP.repo &&\
  echo "Backup created in your home folder." &&\
 
- pkexec rm /etc/yum.repos.d/$author-$reponame.repo &&\
+ pkexec rm /etc/yum.repos.d/_copr_$author-$reponame.repo &&\
  echo "COPR Repository $author-$reponame removed." || echo "ERROR removing COPR repository."
 
 elif [[ "$1" == "list" ]]; then
- ls /etc/yum.repos.d/ | grep COPR_
+ find /etc/yum.repos.d/ -type f -name '_copr_*' -printf "%f\n"
 
 elif [[ "$1" == "search" ]]; then
  xdg-open "https://copr.fedorainfracloud.org/coprs/fulltext/?fulltext=$2"
