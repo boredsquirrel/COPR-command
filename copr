@@ -43,6 +43,8 @@ Options:
   remove    Remove COPR repository after backing it up.
   list      List all COPR repositories in your repo folder.
   search    Search for a COPR repository by name (in your Browser)
+  disable   Keep a repo but disable it
+  enable    Make a disabled repo active
   help      Display this help text.
 
 Argument:
@@ -112,9 +114,21 @@ elif [[ "$1" == "remove" ]]; then
 elif [[ "$1" == "list" ]]; then
  find /etc/yum.repos.d/ -type f -name '_copr*' -exec basename {} \; | sed 's/_copr_//; s/\.repo$//'
 
-# option to search, this is just implemented through the browser
+# search, this is just implemented through the browser
 elif [[ "$1" == "search" ]]; then
  xdg-open "https://copr.fedorainfracloud.org/coprs/fulltext/?fulltext=$2"
+
+# disable a repo
+elif [[ "$1" == "disable" ]]; then
+  sed 's/enabled=1/enabled=0/g' $repofile > /dev/null \
+  && echo "Repository $author/$reponame disabled." \
+  || echo "Already disabled or repo not found."
+
+# enable a repo
+elif [[ "$1" == "enable" ]]; then
+  sed 's/enabled=0/enabled=1/g' $repofile > /dev/null \
+  && echo "Repository $author/$reponame enabled" \
+  || echo "Already enabled or repo not found."
 
 # display the helptext
 elif [[ "$1" == "-h" || "$1" == "--h" || "$1" == "-help" || "$1" == "--help" || "$1" == "help" ]]; then
