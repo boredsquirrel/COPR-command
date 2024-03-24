@@ -1,9 +1,14 @@
 #!/bin/bash
 
+# assign variables for author, reponame and releaseversion
 author="$(echo $2 | cut -d '/' -f1)"
 reponame="$(echo $2 | cut -d '/' -f2)"
 releasever="$(rpm -E %fedora)"
+repofile="/etc/yum.repos.d/_copr_$author-$reponame.repo"
+repofilebak="~/COPR/_copr_$author-$reponame.repo"
 
+
+# the original copr warning message
 question=$(cat <<EOF
 Enabling a Copr repository. Please note that this repository is not part
 of the main distribution, and quality may vary.
@@ -20,6 +25,7 @@ Do you really want to enable copr.fedorainfracloud.org/$author/$reponame? [y/N]:
 EOF
 )
 
+# the helptext
 helptext=$(cat << EOF
 
 ====== Experimental COPR Command in non-DNF Fedora Distributions ======
@@ -60,25 +66,57 @@ if [[ "$1" == "enable" ]]; then
      read -p "$question" yn
      case $yn in
          [Yy]* ) echo "$author/$reponame -> $releasever"
- curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec sudo tee /etc/yum.repos.d/_copr_$author-$reponame.repo && break;;
-         * ) echo "Error: Safe and good answer. Exiting." && break;;
+ curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec tee $repofile && break;;
+         * ) echo "Unknown option, exiting." && break;;
      esac
  done
 
+# remove the named repo
 elif [[ "$1" == "remove" ]]; then
- pkexec cp /etc/yum.repos.d/_copr_$author-$reponame.repo ~/_copr_$author-$reponame-BACKUP.repo &&\
- pkexec chown $USER ~/_copr_$author-$reponame-BACKUP.repo &&\
- echo "Backup created in your home folder." &&\
+  # backup the repofile and change owner to user
+  mkdir ~/COPR
 
- pkexec rm /etc/yum.repos.d/_copr_$author-$reponame.repo &&\
- echo "COPR Repository $author-$reponame removed." || echo "ERROR removing COPR repository."
+  if [[ -e "$repofile" ]]; then
+      # Backup existing repo file and set ownership to the user
+      pkexec cp $repofile $repofilebak \
+      && pkexec chown $USER "$backup_file" \
+      && echo "Backup created in your home folder."
 
+      # Remove the repo file
+      pkexec rm $repofile \
+      && echo "COPR Repository $author/$reponame removed." \
+      || echo "ERROR removing COPR repository."
+  else
+      # search for the reponame
+      echo "Repo with name $author/$reponame not found, trying a search..."
+
+      result=$(grep -ril --include='*.repo' "$reponame" /etc/yum.repos.d/)
+      # if not found, exit
+      if [[ -z "$result" ]]; then
+          echo "No repositories containing '$reponame' were found." \
+          && break
+      else
+          # if found, make sure it is the right one
+          read -rp "Repo '$result' was found. Do you want to backup and remove this repo? (Y/N) " answer
+          if [[ "${answer,,}" == "y" ]]; then
+              pkexec cp "$result" "$backup_file" \
+              && pkexec chown "$(whoami)" "$backup_file" \
+              && pkexec rm "$result" \
+              && echo "COPR Repository '$reponame' removed." \
+              || echo "ERROR removing COPR repository."
+          fi
+      fi
+  fi
+
+# list only COPR repositories
 elif [[ "$1" == "list" ]]; then
- find /etc/yum.repos.d/ -type f -name '_copr*' -exec basename {} \; | sed 's/_copr_//'
+ find /etc/yum.repos.d/ -type f -name '_copr*' -exec basename {} \; | sed 's/_copr_//; s/\.repo$//'
 
+# option to search, this is just implemented through the browser
 elif [[ "$1" == "search" ]]; then
  xdg-open "https://copr.fedorainfracloud.org/coprs/fulltext/?fulltext=$2"
 
+# display the helptext
 elif [[ "$1" == "-h" || "$1" == "--h" || "$1" == "-help" || "$1" == "--help" || "$1" == "help" ]]; then
  echo "$helptext"
 fi
