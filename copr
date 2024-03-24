@@ -1,5 +1,4 @@
 #!/bin/bash
-pushd /tmp > /dev/null
 
 author="$(echo $2 | cut -d '/' -f1)"
 reponame="$(echo $2 | cut -d '/' -f2)"
@@ -40,8 +39,8 @@ Options:
   search    Search for a COPR repository by name (in your Browser)
   help      Display this help text.
 
-Arguments:
-  [ARGUMENT]  Name of the COPR repository (for search) or `author/repo` (for install and remove)
+Argument:
+  Name of the COPR repository (for search) or "author/repo" (for install and remove)
 
 Examples:
   copr enable kdesig/kde-nightly-qt6
