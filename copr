@@ -74,7 +74,7 @@ elif [[ "$1" == "remove" ]]; then
  echo "COPR Repository $author-$reponame removed." || echo "ERROR removing COPR repository."
 
 elif [[ "$1" == "list" ]]; then
- find /etc/yum.repos.d/ -type f -name '_copr_*' -printf "%f\n"
+ find /etc/yum.repos.d/ -type f -name '_copr*' -exec basename {} \; | sed 's/_copr_//'
 
 elif [[ "$1" == "search" ]]; then
  xdg-open "https://copr.fedorainfracloud.org/coprs/fulltext/?fulltext=$2"
