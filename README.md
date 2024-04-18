@@ -33,4 +33,4 @@ wget https://raw.githubusercontent.com/trytomakeyouprivate/COPR-OSTree/main/copr
 chmod +x ~/.local/bin/copr
 ```
 
-> NOTE: Afaik the `dnf copr` and also this tool don't support updating currently installed COPR repositories. This would be really useful, and could be done with `sed` and a prompt to remove outdated repos and their associated packages. PRs welcome!
+> NOTE: COPR repos are version-independent, but there could be a chance they are unmaintained and thus dont support the current version. A solution like at least warning about it, or even removing them, could be useful. I did not test such a case on Fedora Atomic, and guess such a package would simply result in an `rpm-ostree` error.
