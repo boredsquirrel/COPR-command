@@ -32,3 +32,5 @@ Install:
 wget https://raw.githubusercontent.com/trytomakeyouprivate/COPR-OSTree/main/copr -P ~/.local/bin/ &&\
 chmod +x ~/.local/bin/copr
 ```
+
+> NOTE: Afaik the `dnf copr` and also this tool don't support updating currently installed COPR repositories. This would be really useful, and could be done with `sed` and a prompt to remove outdated repos and their associated packages. PRs welcome!
