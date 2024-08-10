@@ -2,9 +2,8 @@
 
 set -euo pipefail
 
-# Check if the provided option is "help" or "list" before verifying arguments
-case "$1" in
--h | --h | -help | --help | help)
+# Function to display usage instructions
+display_usage() {
 	cat <<EOF
 ====== Experimental COPR Command in non-DNF Fedora Distributions ======
 
@@ -32,20 +31,41 @@ Examples:
 
 For help, visit https://discussion.fedoraproject.org.
 EOF
-	exit 0
-	;;
+}
 
-list)
-	find /etc/yum.repos.d/ -type f -name '_copr*' -exec basename {} \; | sed 's/_copr_//; s/\.repo$//'
+# Display usage if no arguments are provided
+if [[ $# -eq 0 ]]; then
+	display_usage
+	exit 0
+fi
+
+# Display usage if help is requested
+case "$1" in
+-h | --h | -help | --help | help)
+	if [[ $# -gt 1 ]]; then
+		echo "Error: The 'help' option does not accept arguments."
+		exit 1
+	fi
+	display_usage
 	exit 0
 	;;
 esac
 
-# Check if the required arguments were provided
-if [[ $# -lt 2 ]]; then
-    echo "Error: insufficient number of arguments."
-    echo "Usage: ./copr [OPTION] [AUTHOR/REPO]"
-    exit 1
+# Display list if list is requested
+if [[ "$1" == "list" ]]; then
+	if [[ $# -gt 1 ]]; then
+		echo "Error: The 'list' option does not accept arguments."
+		exit 1
+	fi
+	find /etc/yum.repos.d/ -type f -name '_copr*' -exec basename {} \; | sed 's/_copr_//; s/\.repo$//'
+	exit 0
+fi
+
+# Verify that required arguments were provided for commands that need them
+if [[ $# -lt 2 && "$1" != "list" && "$1" != "search" && "$1" != "help" ]]; then
+	echo "Error: insufficient number of arguments."
+	echo "Usage: ./copr [OPTION] [AUTHOR/REPO]"
+	exit 1
 fi
 
 # Assign variables for author, reponame, and releaseversion
