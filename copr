@@ -1,15 +1,64 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# assign variables for author, reponame and releaseversion
-author="$(echo $2 | cut -d '/' -f1)"
-reponame="$(echo $2 | cut -d '/' -f2)"
+set -euo pipefail
+
+# Check if the provided option is "help" or "list" before verifying arguments
+case "$1" in
+-h | --h | -help | --help | help)
+	cat <<EOF
+====== Experimental COPR Command in non-DNF Fedora Distributions ======
+
+This tool is not made or supported by the Fedora Project,
+but aims to reproduce the "dnf copr" functionalities for easily adding COPRs.
+
+Usage: ./copr [OPTION] [ARGUMENT]
+
+Options:
+  enable    Add or enable a COPR repository.
+  remove    Remove COPR repository after backing it up.
+  list      List all COPR repositories in your repo folder.
+  search    Search for a COPR repository by name (in your Browser)
+  disable   Keep a repo but disable it.
+  help      Display this help text.
+
+Argument:
+  Name of the COPR repository (for search) or "author/repo" (for install and remove)
+
+Examples:
+  copr enable kdesig/kde-nightly-qt6
+  copr remove kdesig/kde-nightly-qt6
+  copr list
+  copr search uutils
+
+For help, visit https://discussion.fedoraproject.org.
+EOF
+	exit 0
+	;;
+
+list)
+	find /etc/yum.repos.d/ -type f -name '_copr*' -exec basename {} \; | sed 's/_copr_//; s/\.repo$//'
+	exit 0
+	;;
+esac
+
+# Check if the required arguments were provided
+if [[ $# -lt 2 ]]; then
+    echo "Error: insufficient number of arguments."
+    echo "Usage: ./copr [OPTION] [AUTHOR/REPO]"
+    exit 1
+fi
+
+# Assign variables for author, reponame, and releaseversion
+author="${2%%/*}"
+reponame="${2##*/}"
 releasever="$(rpm -E %fedora)"
-repofile="/etc/yum.repos.d/_copr_$author-$reponame.repo"
-repofilebak="~/COPR/_copr_$author-$reponame.repo"
+repofile="/etc/yum.repos.d/_copr_${author}-${reponame}.repo"
+backup_dir="$HOME/.cache/copr"
+repofilebak="${backup_dir}/_copr_${author}-${reponame}.repo"
 
-
-# the original copr warning message
-question=$(cat <<EOF
+# Copr warning message
+question=$(
+	cat <<EOF
 Enabling a Copr repository. Please note that this repository is not part
 of the main distribution, and quality may vary.
 
@@ -25,112 +74,66 @@ Do you really want to enable copr.fedorainfracloud.org/$author/$reponame? [y/N]:
 EOF
 )
 
-# the helptext
-helptext=$(cat << EOF
-
-====== Experimental COPR Command in non-DNF Fedora Distributions ======
-
-This Tool is not made or supported by the Fedora Project,
-but aims to reproduce the "dnf copr" functionalities for easily adding COPRs.
-
-Usage: ./copr [OPTION] [ARGUMENT]
-
-
-Usage: copr [OPTION] [ARGUMENT]
-
-Options:
-  enable    Add COPR repository.
-  remove    Remove COPR repository after backing it up.
-  list      List all COPR repositories in your repo folder.
-  search    Search for a COPR repository by name (in your Browser)
-  disable   Keep a repo but disable it
-  enable    Make a disabled repo active
-  help      Display this help text.
-
-Argument:
-  Name of the COPR repository (for search) or "author/repo" (for install and remove)
-
-Examples:
-  copr enable kdesig/kde-nightly-qt6
-  copr remove kdesig/kde-nightly-qt6
-  copr list
-  copr search uutils
-
-For help, visit https://discussion.fedoraproject.org.
-
-EOF
-)
+# Function to backup and remove repo
+backup_and_remove_repo() {
+	if [[ -e "$1" ]]; then
+		mkdir -p "$backup_dir"
+		pkexec cp "$1" "$repofilebak" && pkexec chown "$USER" "$repofilebak"
+		pkexec rm "$1" && echo "COPR Repository $author/$reponame removed." || echo "ERROR removing COPR repository."
+	else
+		echo "Repo with name $author/$reponame not found, trying a search..."
+		result=$(grep -ril --include='*.repo' "$reponame" /etc/yum.repos.d/)
+		if [[ -z "$result" ]]; then
+			echo "No repositories containing '$reponame' were found."
+		else
+			read -rp "Repo '$result' was found. Do you want to backup and remove this repo? (Y/N) " answer
+			if [[ "${answer,,}" == "y" ]]; then
+				pkexec cp "$result" "$repofilebak" && pkexec chown "$USER" "$repofilebak"
+				pkexec rm "$result" && echo "COPR Repository '$reponame' removed." || echo "ERROR removing COPR repository."
+			fi
+		fi
+	fi
+}
 
 # Main loop
+case "$1" in
+enable)
+	if [[ -f "$repofile" ]]; then
+		if grep -q 'enabled=0' "$repofile"; then
+			sed -i 's/enabled=0/enabled=1/' "$repofile"
+			echo "Repository $author/$reponame enabled."
+		else
+			echo "Repository $author/$reponame is already enabled."
+		fi
+	else
+		read -p "$question" yn
+		if [[ "${yn,,}" == "y" ]]; then
+			echo "$author/$reponame -> $releasever"
+			curl -fsSL "https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo" | pkexec tee "$repofile"
+		else
+			echo "Operation cancelled."
+		fi
+	fi
+	;;
 
-if [[ "$1" == "enable" ]]; then
- while true; do
-     read -p "$question" yn
-     case $yn in
-         [Yy]* ) echo "$author/$reponame -> $releasever"
- curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec tee $repofile && break;;
-         * ) echo "Unknown option, exiting." && break;;
-     esac
- done
+remove)
+	backup_and_remove_repo "$repofile"
+	;;
 
-# remove the named repo
-elif [[ "$1" == "remove" ]]; then
-  # backup the repofile and change owner to user
-  mkdir ~/COPR
+search)
+	xdg-open "https://copr.fedorainfracloud.org/coprs/fulltext/?fulltext=$2"
+	;;
 
-  if [[ -e "$repofile" ]]; then
-      # Backup existing repo file and set ownership to the user
-      pkexec cp $repofile $repofilebak \
-      && pkexec chown $USER "$backup_file" \
-      && echo "Backup created in your home folder."
+disable)
+	if [[ -f "$repofile" && $(grep 'enabled=1' "$repofile") ]]; then
+		sed -i 's/enabled=1/enabled=0/' "$repofile"
+		echo "Repository $author/$reponame disabled."
+	else
+		echo "Repository is already disabled or not found."
+	fi
+	;;
 
-      # Remove the repo file
-      pkexec rm $repofile \
-      && echo "COPR Repository $author/$reponame removed." \
-      || echo "ERROR removing COPR repository."
-  else
-      # search for the reponame
-      echo "Repo with name $author/$reponame not found, trying a search..."
-
-      result=$(grep -ril --include='*.repo' "$reponame" /etc/yum.repos.d/)
-      # if not found, exit
-      if [[ -z "$result" ]]; then
-          echo "No repositories containing '$reponame' were found." \
-          && break
-      else
-          # if found, make sure it is the right one
-          read -rp "Repo '$result' was found. Do you want to backup and remove this repo? (Y/N) " answer
-          if [[ "${answer,,}" == "y" ]]; then
-              pkexec cp "$result" "$backup_file" \
-              && pkexec chown "$(whoami)" "$backup_file" \
-              && pkexec rm "$result" \
-              && echo "COPR Repository '$reponame' removed." \
-              || echo "ERROR removing COPR repository."
-          fi
-      fi
-  fi
-
-# list only COPR repositories
-elif [[ "$1" == "list" ]]; then
- find /etc/yum.repos.d/ -type f -name '_copr*' -exec basename {} \; | sed 's/_copr_//; s/\.repo$//'
-
-# search, this is just implemented through the browser
-elif [[ "$1" == "search" ]]; then
- xdg-open "https://copr.fedorainfracloud.org/coprs/fulltext/?fulltext=$2"
-
-# disable a repo
-elif [[ "$1" == "disable" ]]; then
-  sed 's/enabled=1/enabled=0/g' $repofile > /dev/null \
-  && echo "Repository $author/$reponame disabled." \
-  || echo "Already disabled or repo not found."
-
-# enable a repo
-elif [[ "$1" == "enable" ]]; then
-  sed 's/enabled=0/enabled=1/g' $repofile > /dev/null \
-  && echo "Repository $author/$reponame enabled" \
-  || echo "Already enabled or repo not found."
-
-# display the helptext
-elif [[ "$1" == "-h" || "$1" == "--h" || "$1" == "-help" || "$1" == "--help" || "$1" == "help" ]]; then
- echo "$helptext"
-fi
+*)
+	echo "Unknown option. Use 'help' to see available options."
+	;;
+esac
