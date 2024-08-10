@@ -2,6 +2,12 @@
 
 set -euo pipefail
 
+# Colors
+RC='\033[0m'
+RED='\033[31m'
+YELLOW='\033[33m'
+GREEN='\033[32m'
+
 # Function to display usage instructions
 display_usage() {
 	cat <<EOF
@@ -43,7 +49,7 @@ fi
 case "$1" in
 -h | --h | -help | --help | help)
 	if [[ $# -gt 1 ]]; then
-		echo "Error: The 'help' option does not accept arguments."
+		echo -e "${RED}Error: The 'help' option does not accept arguments.${RC}"
 		exit 1
 	fi
 	display_usage
@@ -54,7 +60,7 @@ esac
 # Display list if list is requested
 if [[ "$1" == "list" ]]; then
 	if [[ $# -gt 1 ]]; then
-		echo "Error: The 'list' option does not accept arguments."
+		echo -e "${RED}Error: The 'list' option does not accept arguments.${RC}"
 		exit 1
 	fi
 	find /etc/yum.repos.d/ -type f -name '_copr*' -exec basename {} \; | sed 's/_copr_//; s/\.repo$//'
@@ -62,10 +68,11 @@ if [[ "$1" == "list" ]]; then
 fi
 
 # Verify that required arguments were provided for commands that need them
-if [[ $# -lt 2 && "$1" != "list" && "$1" != "search" && "$1" != "help" ]]; then
-	echo "Error: insufficient number of arguments."
-	echo "Usage: ./copr [OPTION] [AUTHOR/REPO]"
-	exit 1
+if [[ "$1" == "enable" || "$1" == "remove" || "$1" == "disable" || "$1" == "search" ]]; then
+	if [[ $# -ne 2 ]]; then
+		echo -e "${RED}Error: The '$1' option requires exactly one argument.${RC}"
+		exit 1
+	fi
 fi
 
 # Assign variables for author, reponame, and releaseversion
@@ -99,17 +106,17 @@ backup_and_remove_repo() {
 	if [[ -e "$1" ]]; then
 		mkdir -p "$backup_dir"
 		pkexec cp "$1" "$repofilebak" && pkexec chown "$USER" "$repofilebak"
-		pkexec rm "$1" && echo "COPR Repository $author/$reponame removed." || echo "ERROR removing COPR repository."
+		pkexec rm "$1" && echo -e "${GREEN}COPR Repository $author/$reponame removed.${RC}" || echo -e "${RED}ERROR removing COPR repository.${RC}"
 	else
-		echo "Repo with name $author/$reponame not found, trying a search..."
+		echo -e "${YELLOW}Repo with name $author/$reponame not found, trying a search...${YELLOW}"
 		result=$(grep -ril --include='*.repo' "$reponame" /etc/yum.repos.d/)
 		if [[ -z "$result" ]]; then
-			echo "No repositories containing '$reponame' were found."
+			echo -e "${RED}No repositories containing '$reponame' were found.${RC}"
 		else
 			read -rp "Repo '$result' was found. Do you want to backup and remove this repo? (Y/N) " answer
 			if [[ "${answer,,}" == "y" ]]; then
 				pkexec cp "$result" "$repofilebak" && pkexec chown "$USER" "$repofilebak"
-				pkexec rm "$result" && echo "COPR Repository '$reponame' removed." || echo "ERROR removing COPR repository."
+				pkexec rm "$result" && echo -e "${GREEN}COPR Repository '$reponame' removed.${RC}" || echo -e "${RED}ERROR removing COPR repository.${RC}"
 			fi
 		fi
 	fi
@@ -121,9 +128,9 @@ enable)
 	if [[ -f "$repofile" ]]; then
 		if grep -q 'enabled=0' "$repofile"; then
 			sed -i 's/enabled=0/enabled=1/' "$repofile"
-			echo "Repository $author/$reponame enabled."
+			echo -e "${GREEN}Repository $author/$reponame enabled.${RC}"
 		else
-			echo "Repository $author/$reponame is already enabled."
+			echo -e "${YELLOW}Repository $author/$reponame is already enabled.${RC}"
 		fi
 	else
 		read -p "$question" yn
@@ -131,7 +138,7 @@ enable)
 			echo "$author/$reponame -> $releasever"
 			curl -fsSL "https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo" | pkexec tee "$repofile"
 		else
-			echo "Operation cancelled."
+			echo -e "${YELLOW}Operation cancelled.${RC}"
 		fi
 	fi
 	;;
@@ -147,13 +154,13 @@ search)
 disable)
 	if [[ -f "$repofile" && $(grep 'enabled=1' "$repofile") ]]; then
 		sed -i 's/enabled=1/enabled=0/' "$repofile"
-		echo "Repository $author/$reponame disabled."
+		echo -e "${GREEN}Repository $author/$reponame disabled.${RC}"
 	else
-		echo "Repository is already disabled or not found."
+		echo -e "${YELLOW}Repository is already disabled or not found.${RC}"
 	fi
 	;;
 
 *)
-	echo "Unknown option. Use 'help' to see available options."
+	echo -e "${YELLOW}Unknown option. Use 'help' to see available options.${RC}"
 	;;
 esac
