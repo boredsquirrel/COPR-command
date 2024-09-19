@@ -29,7 +29,7 @@ Examples:
 Install:
 
 ```
-wget https://raw.githubusercontent.com/trytomakeyouprivate/COPR-OSTree/main/copr -P ~/.local/bin/ &&\
+wget https://raw.githubusercontent.com/boredsquirrel/COPR-command/main/copr -P ~/.local/bin/ &&\
 chmod +x ~/.local/bin/copr
 ```
 
