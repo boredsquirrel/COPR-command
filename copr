@@ -64,14 +64,25 @@ EOF
 # Main loop
 
 if [[ "$1" == "enable" ]]; then
- while true; do
-     read -p "$question" yn
-     case $yn in
-         [Yy]* ) echo "$author/$reponame -> $releasever"
- curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec tee $repofile && break;;
-         * ) echo "Unknown option, exiting." && break;;
-     esac
- done
+    if [[ -f "$repofile" ]]; then
+        # If the repo file exists, enable it
+        sed -i 's/enabled=0/enabled=1/g' "$repofile" && echo "Repository $author/$reponame enabled" || echo "Already enabled or repo not found."
+    else
+        # If the repo file does not exist, download it
+        while true; do
+            read -p "$question" yn
+            case $yn in
+                [Yy]* ) 
+                    echo "$author/$reponame -> $releasever"
+                    curl -fsSL "https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo" | pkexec tee "$repofile" && break
+                    ;;
+                * ) 
+                    echo "Unknown option, exiting." && break
+                    ;;
+            esac
+        done
+    fi
+fi
 
 # remove the named repo
 elif [[ "$1" == "remove" ]]; then
@@ -123,12 +134,6 @@ elif [[ "$1" == "disable" ]]; then
   sed 's/enabled=1/enabled=0/g' $repofile > /dev/null \
   && echo "Repository $author/$reponame disabled." \
   || echo "Already disabled or repo not found."
-
-# enable a repo
-elif [[ "$1" == "enable" ]]; then
-  sed 's/enabled=0/enabled=1/g' $repofile > /dev/null \
-  && echo "Repository $author/$reponame enabled" \
-  || echo "Already enabled or repo not found."
 
 # display the helptext
 elif [[ "$1" == "-h" || "$1" == "--h" || "$1" == "-help" || "$1" == "--help" || "$1" == "help" ]]; then
