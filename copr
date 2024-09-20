@@ -140,6 +140,7 @@ fi
 # chang SELinux labels to "system_u:object_r:system_conf_t:s0" like the default Fedora repos
 
 echo "Securing the repo files against manipulation. Please enter your password one last time."
-pkexec chown root:root /etc/yum.repos.d/* &&\
-pkexec chmod 744 /etc/yum.repos.d/* || { echo "Failed to secure the repo files!"; exit 1; }
-pkexec chcon -R system_u:object_r:system_conf_t:s0 /etc/yum.repos.d/
+pkexec sh -c "chown root:root /etc/yum.repos.d/* && \
+               chmod 744 /etc/yum.repos.d/* && \
+               chcon -R system_u:object_r:system_conf_t:s0 /etc/yum.repos.d/" || { echo "Failed to secure the repo files!"; exit 1; }
+echo
