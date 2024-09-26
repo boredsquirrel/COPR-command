@@ -82,7 +82,6 @@ if [[ "$1" == "enable" ]]; then
             esac
         done
     fi
-fi
 
 # remove the named repo
 elif [[ "$1" == "remove" ]]; then
