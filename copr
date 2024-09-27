@@ -72,11 +72,11 @@ if [[ "$1" == "enable" ]]; then
         while true; do
             read -p "$question" yn
             case $yn in
-                [Yy]* ) 
+                [Yy]* )
                     echo "$author/$reponame -> $releasever"
                     curl -fsSL "https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo" | pkexec tee "$repofile" && break
                     ;;
-                * ) 
+                * )
                     echo "Unknown option, exiting." && break
                     ;;
             esac
@@ -85,7 +85,7 @@ if [[ "$1" == "enable" ]]; then
 fi
 
 # remove the named repo
-elif [[ "$1" == "remove" ]]; then
+if [[ "$1" == "remove" ]]; then
   # backup the repofile and change owner to user
   mkdir ~/COPR
 
