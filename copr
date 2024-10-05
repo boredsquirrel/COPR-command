@@ -5,7 +5,7 @@ author="$(echo "$2" | cut -d '/' -f1)"
 reponame="$(echo "$2" | cut -d '/' -f2)"
 releasever="$(rpm -E %fedora)"
 repofile="/etc/yum.repos.d/_copr_$author-$reponame.repo"
-repofilebak="~/COPR/_copr_$author-$reponame.repo"
+repofilebak="$HOME/COPR/_copr_$author-$reponame.repo"
 
 # the original copr warning message
 question=$(
