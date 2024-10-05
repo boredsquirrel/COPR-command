@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # assign variables for author, reponame and releaseversion
 author="$(echo "$2" | cut -d '/' -f1)"
