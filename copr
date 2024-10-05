@@ -71,7 +71,7 @@ if [[ "$1" == "enable" ]]; then
     else
         # If the repo file does not exist, download it
         while true; do
-            read -p "$question" yn
+            read -r -p "$question" yn
             case $yn in
             [Yy]*)
                 echo "$author/$reponame -> $releasever"
