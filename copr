@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # assign variables for author, reponame and releaseversion
-author="$(echo $2 | cut -d '/' -f1)"
-reponame="$(echo $2 | cut -d '/' -f2)"
+author="$(echo "$2" | cut -d '/' -f1)"
+reponame="$(echo "$2" | cut -d '/' -f2)"
 releasever="$(rpm -E %fedora)"
 repofile="/etc/yum.repos.d/_copr_$author-$reponame.repo"
 repofilebak="~/COPR/_copr_$author-$reponame.repo"
@@ -91,12 +91,12 @@ elif [[ "$1" == "remove" ]]; then
 
     if [[ -e "$repofile" ]]; then
         # Backup existing repo file and set ownership to the user
-        pkexec cp $repofile $repofilebak &&
-            pkexec chown $USER "$backup_file" &&
+        pkexec cp "$repofile" "$repofilebak" &&
+            pkexec chown "$USER" "$backup_file" &&
             echo "Backup created in your home folder."
 
         # Remove the repo file
-        pkexec rm $repofile &&
+        pkexec rm "$repofile" &&
             echo "COPR Repository $author/$reponame removed." ||
             echo "ERROR removing COPR repository."
     else
@@ -131,7 +131,7 @@ elif [[ "$1" == "search" ]]; then
 
 # disable a repo
 elif [[ "$1" == "disable" ]]; then
-    sed 's/enabled=1/enabled=0/g' $repofile >/dev/null &&
+    sed 's/enabled=1/enabled=0/g' "$repofile" >/dev/null &&
         echo "Repository $author/$reponame disabled." ||
         echo "Already disabled or repo not found."
 
