@@ -8,7 +8,7 @@ repofile="/etc/yum.repos.d/_copr_$author-$reponame.repo"
 repofilebak="~/COPR/_copr_$author-$reponame.repo"
 
 
-# the original copr warning message
+# The original COPR warning message
 question=$(cat <<EOF
 Enabling a Copr repository. Please note that this repository is not part
 of the main distribution, and quality may vary.
@@ -33,19 +33,15 @@ helptext=$(cat << EOF
 This Tool is not made or supported by the Fedora Project,
 but aims to reproduce the "dnf copr" functionalities for easily adding COPRs.
 
-Usage: ./copr [OPTION] [ARGUMENT]
-
-
 Usage: copr [OPTION] [ARGUMENT]
 
 Options:
-  enable    Add COPR repository.
-  remove    Remove COPR repository after backing it up.
-  list      List all COPR repositories in your repo folder.
-  search    Search for a COPR repository by name (in your Browser)
+  enable    Add COPR repository
   disable   Keep a repo but disable it
-  enable    Make a disabled repo active
-  help      Display this help text.
+  remove    Remove COPR repository after backing it up
+  list      List all COPR repositories in your repo folder
+  search    Search for a COPR repository by name (in your Browser)
+  help      Display this help text
 
 Argument:
   Name of the COPR repository (for search) or "author/repo" (for install and remove)
@@ -54,35 +50,40 @@ Examples:
   copr enable kdesig/kde-nightly-qt6
   copr remove kdesig/kde-nightly-qt6
   copr list
-  copr search uutils
+  copr search bubblejail
 
-For help, visit https://discussion.fedoraproject.org.
+For help, write me here: https://discussion.fedoraproject.org/u/boredsquirrel/
 
 EOF
 )
 
 # Main loop
 
+# TODO
+# detect existing file, change 0 to 1
+
 if [[ "$1" == "enable" ]]; then
-    if [[ -f "$repofile" ]]; then
-        # If the repo file exists, enable it
-        sed -i 's/enabled=0/enabled=1/g' "$repofile" && echo "Repository $author/$reponame enabled" || echo "Already enabled or repo not found."
-    else
-        # If the repo file does not exist, download it
-        while true; do
-            read -p "$question" yn
-            case $yn in
-                [Yy]* ) 
-                    echo "$author/$reponame -> $releasever"
-                    curl -fsSL "https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo" | pkexec tee "$repofile" && break
-                    ;;
-                * ) 
-                    echo "Unknown option, exiting." && break
-                    ;;
-            esac
-        done
-    fi
-fi
+ while true; do
+     read -p "$question" yn
+     case $yn in
+         [Yy]* )
+            # test if the repo file already exists
+            if [[ -e "$repofile" ]]; then
+              # set the repo to active
+              sed 's/enabled=0/enabled=1/g' $repofile > /dev/null && echo "Repository $author/$reponame enabled" || echo "Already enabled or repo not found."
+            else
+            # download the repofile
+              echo "$author/$reponame -> $releasever"
+              curl -fsSL https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora-.repo | pkexec tee $repofile && break;;
+         * ) echo "Unknown option, exiting." && break;;
+     esac
+  done
+
+# disable a repo
+elif [[ "$1" == "disable" ]]; then
+  sed 's/enabled=1/enabled=0/g' $repofile > /dev/null \
+  && echo "Repository $author/$reponame disabled." \
+  || echo "Already disabled or repo not found."
 
 # remove the named repo
 elif [[ "$1" == "remove" ]]; then
@@ -121,24 +122,19 @@ elif [[ "$1" == "remove" ]]; then
       fi
   fi
 
-# list only COPR repositories
+# list all installed COPR repositories
 elif [[ "$1" == "list" ]]; then
  find /etc/yum.repos.d/ -type f -name '_copr*' -exec basename {} \; | sed 's/_copr_//; s/\.repo$//'
 
-# search, this is just implemented through the browser
+# search, this is just implemented through the browser (hey, pip does the same!)
 elif [[ "$1" == "search" ]]; then
  xdg-open "https://copr.fedorainfracloud.org/coprs/fulltext/?fulltext=$2"
-
-# disable a repo
-elif [[ "$1" == "disable" ]]; then
-  sed 's/enabled=1/enabled=0/g' $repofile > /dev/null \
-  && echo "Repository $author/$reponame disabled." \
-  || echo "Already disabled or repo not found."
 
 # display the helptext
 elif [[ "$1" == "-h" || "$1" == "--h" || "$1" == "-help" || "$1" == "--help" || "$1" == "help" ]]; then
  echo "$helptext"
 fi
+
 
 ##### SECURE REPO FILES #####
 # changing unix permissions to make them root-owned and read-only by world
@@ -148,4 +144,3 @@ echo "Securing the repo files against manipulation. Please enter your password o
 pkexec sh -c "chown root:root /etc/yum.repos.d/* && \
                chmod 744 /etc/yum.repos.d/* && \
                chcon -R system_u:object_r:system_conf_t:s0 /etc/yum.repos.d/" || { echo "Failed to secure the repo files!"; exit 1; }
-echo
