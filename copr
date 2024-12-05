@@ -115,7 +115,7 @@ elif [[ "$1" == "remove" ]]; then
         if [[ -e "$repofile" ]]; then
                 # Backup existing repo file and set ownership to the user
                 pkexec cp "$repofile" "$repofilebak" &&
-                        pkexec chown "$USER" "$backup_file" &&
+                        pkexec chown "$USER" "$repofilebak" &&
                         echo "Backup created in your home folder."
 
                 # Remove the repo file
@@ -135,8 +135,8 @@ elif [[ "$1" == "remove" ]]; then
                         # if found, make sure it is the right one
                         read -rp 'Repo "$result" was found. Do you want to backup and remove this repo? (Y/N) ' answer
                         if [[ "${answer,,}" == "y" ]]; then
-                                pkexec cp "$result" "$backup_file" &&
-                                        pkexec chown "$(whoami)" "$backup_file" &&
+                                pkexec cp "$result" "$repofilebak" &&
+                                        pkexec chown "$(whoami)" "$repofilebak" &&
                                         pkexec rm "$result" || #               && echo 'COPR Repository "$reponame" removed.' \
                                         echo "ERROR removing COPR repository."
                         fi
