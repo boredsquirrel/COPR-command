@@ -3,7 +3,9 @@
 > This Tool is not made or supported by the Fedora Project,
 but aims to reproduce the `dnf copr` functionalities for easily adding COPRs on Fedora Atomic Desktops, IoT and CoreOS.
 
-It does most actions rootless (unlike `dnf copr`) and only requires privilege escalation using `pkexec` for writing the repo file. Thus it also works without `sudo`.
+It does most actions rootless (unlike `dnf copr`) and only requires privilege escalation using `run0` for writing or changing the repo file. Thus it also works without `sudo`.
+
+The tool also fixes SELinux contexts and filesystem permissions, to secure the repo files from tampering. Atomic Desktops allow unprivileged updates from existing repos, so this is important.
 
 ```
 Usage: copr [OPTION] [ARGUMENT]
@@ -20,7 +22,7 @@ Argument:
   Name of the COPR repository (for search) or "author/repo" (for install and remove)
 
 Examples:
-  copr enable kdesig/kde-nightly-qt6
+  copr enable kwizart/kernel-longterm-6.6
   copr remove kdesig/kde-nightly-qt6
   copr list
   copr search bubblejail
@@ -29,8 +31,13 @@ Examples:
 Install:
 
 ```
-wget https://raw.githubusercontent.com/boredsquirrel/COPR-command/main/copr -P ~/.local/bin/ &&\
-chmod +x ~/.local/bin/copr
+curl https://raw.githubusercontent.com/boredsquirrel/COPR-command/main/copr -O ./copr
+run0 sh -c '
+  mkdir /var/usrlocal/bin
+  mv -Z ./copr /var/usrlocal/bin
+  chown -R root:root /var/usrlocal/bin
+  chmod +x /var/usrlocal/bin/copr
+'
 ```
 
 > [!NOTE]
