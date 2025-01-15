@@ -99,7 +99,7 @@ if [[ "$1" == "enable" ]]; then
                                 run0 sed -i 's/enabled=0/enabled=1/g' "$repofile" && echo "Repository $author/$reponame enabled" || echo "Already enabled or repo not found."
                         else
                                 # download the repofile
-                                echo "$author/$reponame -> $releasever"
+                                echo "downloading repo '$reponame' from '$author' for Fedora '$releasever'..."
                                 curl -fsSL "https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora.repo" | run0 tee "$repofile" >/dev/null
                                 secure-files
                         fi
@@ -114,7 +114,6 @@ if [[ "$1" == "enable" ]]; then
 
 # disable a repo
 elif [[ "$1" == "disable" ]]; then
-        secure-files
         sed 's/enabled=1/enabled=0/g' "$repofile" >/dev/null &&
                 echo "Repository "$author"/"$reponame" disabled." ||
                 echo "Already disabled or repo not found."
@@ -153,6 +152,6 @@ elif [[ "$1" == "search" ]]; then
         xdg-open "https://copr.fedorainfracloud.org/coprs/fulltext/?fulltext=$2"
 
 # display the helptext
-elif [[ "$1" == "-h" || "$1" == "--h" || "$1" == "-help" || "$1" == "--help" || "$1" == "help" ]]; then
+elif [[ "$1" == "" || "$1" == "-h" || "$1" == "--h" || "$1" == "-help" || "$1" == "--help" || "$1" == "help" ]]; then
         echo "$helptext"
 fi
