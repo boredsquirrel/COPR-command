@@ -64,7 +64,7 @@ EOF
 
 secure-files () {
         echo "Securing the repo files against manipulation. Please enter your password one last time."
-        pkexec sh -c "
+        run0 sh -c "
         chown root:root /etc/yum.repos.d/* && \
         chmod 744 /etc/yum.repos.d/* && \
         chcon -R system_u:object_r:system_conf_t:s0 /etc/yum.repos.d/
@@ -78,7 +78,7 @@ move-repo () {
         # check if backup dir exists, create it when needed
         [ ! -d "$HOME/COPR" ] && mkdir -p "$HOME/COPR"
 
-        pkexec sh -c '
+        run0 sh -c '
                 mv "$result" "$repofilebak" &&\
                 chown "$USER" "$repofilebak" &&\
                 echo 'COPR Repository "$reponame" removed.' ||\
@@ -96,11 +96,11 @@ if [[ "$1" == "enable" ]]; then
                         # test if the repo file already exists
                         if [[ -e "$repofile" ]]; then
                                 # set the repo to active
-                                pkexec sed -i 's/enabled=0/enabled=1/g' "$repofile" && echo "Repository $author/$reponame enabled" || echo "Already enabled or repo not found."
+                                run0 sed -i 's/enabled=0/enabled=1/g' "$repofile" && echo "Repository $author/$reponame enabled" || echo "Already enabled or repo not found."
                         else
                                 # download the repofile
                                 echo "$author/$reponame -> $releasever"
-                                curl -fsSL "https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora.repo" | pkexec tee "$repofile" >/dev/null
+                                curl -fsSL "https://copr.fedorainfracloud.org/coprs/$author/$reponame/repo/fedora-$releasever/$author-$reponame-fedora.repo" | run0 tee "$repofile" >/dev/null
                                 secure-files
                         fi
                         break
@@ -126,7 +126,7 @@ elif [[ "$1" == "remove" ]]; then
                 move-repo
         else
                 # search for the reponame
-                echo 'Repo with name "$author"/"$reponame"" not found, trying a search...'
+                echo "Repo '$author'/'$reponame' not found, trying a search..."
                 repofile=$(grep -ril --include='*.repo' "$reponame" /etc/yum.repos.d/)
 
                 # if not found, exit
