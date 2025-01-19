@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # assign variables for author, reponame and releaseversion
 author="$(echo "$2" | cut -d '/' -f1)"
